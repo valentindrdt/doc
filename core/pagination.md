@@ -208,4 +208,4 @@ class Book
 
 Previous chapter: [Validation](validation.md)
 
-Next chapter: [Exceptions](exceptions.md)
+Next chapter: [Error Handling](errors.md)

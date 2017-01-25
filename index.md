@@ -47,7 +47,7 @@
 8. [Pagination](core/pagination.md)
   1. [Disabling the Pagination](core/pagination.md#disabling-the-pagination)
   2. [Changing the Number of Items per Page](core/pagination.md#changing-the-number-of-items-per-page)
-9. [Exceptions](core/exceptions.md)
+9. [Error Handling](core/errors.md)
 10. [The Event System](core/events.md)
 11. [Content Negotiation](core/content-negotiation.md)
   1. [Enabling Several Formats](core/content-negotiation.md#enabling-several-formats)
