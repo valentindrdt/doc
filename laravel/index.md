@@ -8,9 +8,9 @@ using Laravel!
 With API Platform, you can:
 
 * expose your Eloquent models in minutes as:
-  * a REST API implementing the industry-leading standards and best practices: JSON-LD, JSON:API and HAL
-  * a GraphQL API
-  * or both at the same time, with the same code!
+    * a REST API implementing the industry-leading standards and best practices: JSON-LD, JSON:API and HAL
+    * a GraphQL API
+    * or both at the same time, with the same code!
 * automatically expose an OpenAPI specification (formerly Swagger), dynamically generated from your Eloquent models and always up to date
 * automatically expose nice UIs and playgrounds to develop using your API (Swagger UI, Redoc, GraphiQL and/or GraphQL Playground)
 * automatically paginate your collections
@@ -146,7 +146,7 @@ So, if you want to access the raw data, you have two alternatives:
 * Add the correct `Accept` header (or don't set any `Accept` header at all if you don't care about security) - preferred when writing API clients
 * Add the format you want as the extension of the resource - for debug purpose only
 
-For instance, go to `http://127.0.0.1:8000/api/books.jsonld` to retrieve the list of `Greeting` resources in JSON-LD.
+For instance, go to `http://127.0.0.1:8000/api/books.jsonld` to retrieve the list of `Book` resources in JSON-LD.
 
 Of course, you can also use your favorite HTTP client to query the API.
 We are fond of [Hoppscotch](https://hoppscotch.com), a free and open source API client with good support of API Platform.
@@ -163,8 +163,8 @@ You can enable or disable formats in `config/api-platform.php`:
 return [
     'formats' => [
         'jsonld' => ['application/ld+json'],
-        'jsonapi' => ['application/vnd.api+json'],
-        'csv' => ['text/csv'],
++       'jsonapi' => ['application/vnd.api+json'],
++       'csv' => ['text/csv'],
     ],
 
     'patch_formats' => [
@@ -173,7 +173,7 @@ return [
 
     'docs_formats' => [
         'jsonld' => ['application/ld+json'],
-        'jsonapi' => ['application/vnd.api+json'],
++       'jsonapi' => ['application/vnd.api+json'],
         'jsonopenapi' => ['application/vnd.openapi+json'],
         'html' => ['text/html'],
     ],
@@ -339,7 +339,7 @@ Reference this factory in the seeder (`database/seeder/DatabaseSeeder.php`):
 ```patch
  namespace Database\Seeders;
  
- use App\Models\Book;
++use App\Models\Book;
  use App\Models\User;
  // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
  use Illuminate\Database\Seeder;
@@ -411,6 +411,8 @@ For instance, here how to make your API read-only by enabling only the `GET` [op
 
 ```patch
 // app/Models/Book.php
++use ApiPlatform\Metadata\Get;
++use ApiPlatform\Metadata\GetCollection;
 
 -#[ApiResource]
  #[ApiResource(
@@ -538,7 +540,7 @@ Use this set of rules in your resource to authorize and validate user input:
 -#[ApiResource]
  #[ApiResource(
      paginationItemsPerPage: 10,
-+    rules: BookFormRequest::class
++    rules: BookFormRequest::class,
 )]
  class Book extends Model
  {
@@ -583,7 +585,7 @@ return [
 
 ## Authorization
 
-To protect an operation and ensure that only authorized users can access them, start by creating a Laravel [policiy](https://laravel.com/docs/authorization#creating-policies): 
+To protect an operation and ensure that only authorized users can access them, start by creating a Laravel [policiy](https://laravel.com/docs/authorization#creating-policies):
 
 ```console
 php artisan make:policy BookPolicy --model=Book
@@ -596,8 +598,9 @@ Then, use the `policy` property on an operation attribute to enforce this policy
 
 namespace App\Models;
 
-use ApiPlatform\Metadata\ApiResource;
-use Illuminate\Database\Eloquent\Model;
+ use ApiPlatform\Metadata\ApiResource;
++use ApiPlatform\Metadata\Patch;
+ use Illuminate\Database\Eloquent\Model;
 
 -#[ApiResource]
  #[ApiResource(
