@@ -27,7 +27,7 @@ private const POLICY_METHODS = [
 ];
 ```
 
-If your policy methods do not match Laravel's standards, you always can use the `policy` property on an operation attribute to enforce this policy:
+If your policy methods do not match Laravel's standards, you can always use the `policy` property on an operation attribute to enforce this policy:
 ```php
 // app/Models/Book.php
 namespace App\Models;
