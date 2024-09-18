@@ -1,25 +1,25 @@
 # API Platform for Laravel Projects
 
-API Platform is **the easiest way** to create **state of the art** web APIs
+API Platform is **the easiest way** to create **state-of-the-art** web APIs
 using Laravel!
 
 ![Basic REST API](images/basic-rest.png)
 
 With API Platform, you can:
 
-* expose your Eloquent models in minutes as:
-    * a REST API implementing the industry-leading standards and best practices: JSON-LD, JSON:API and HAL
-    * a GraphQL API
+* [expose your Eloquent](#exposing-a-model) models in minutes as:
+    * a REST API implementing the industry-leading standards, formats and best practices: [JSON-LD](https://en.wikipedia.org/wiki/JSON-LD)/[RDF](https://en.wikipedia.org/wiki/Resource_Description_Framework), [JSON:API](https://jsonapi.org), [HAL](https://stateless.group/hal_specification.html), and many RFCs...
+    * a [GraphQL](https://graphql.org/) API
     * or both at the same time, with the same code!
-* automatically expose an OpenAPI specification (formerly Swagger), dynamically generated from your Eloquent models and always up to date
-* automatically expose nice UIs and playgrounds to develop using your API (Swagger UI, Redoc, GraphiQL and/or GraphQL Playground)
+* automatically expose an [OpenAPI](https://www.openapis.org) specification (formerly Swagger), dynamically generated from your Eloquent models and always up to date
+* automatically expose nice UIs and playgrounds to develop using your API ([Swagger UI](https://swagger.io/tools/swagger-ui/) and [GraphiQL](https://github.com/graphql/graphiql))
 * automatically paginate your collections
-* add validation logic using Laravel logic
-* add authorization logic using gates and policies (compatible with Passport and Sanctum)
-* add filtering logic
-* push changed data to the clients in real-time using Laravel Broadcast and [Mercure](https://mercure.rocks) (a popular WebSockets alternative, created by Kévin Dunglas, the original author of API Platform) and receive them using Laravel Echo
+* add validation logic using Laravel [Form Request Validation](#write-operations-authorization-and-validation)
+* add authorization logic using [gates and policies](#authorization) ([compatible with Sanctum, Passport, Socialite...](#authentication))
+* add [filtering logic](#adding-filters)
+<!--* push changed data to the clients in real-time using Laravel Broadcast and [Mercure](https://mercure.rocks) (a popular WebSockets alternative, created by Kévin Dunglas, the original author of API Platform) and receive them using Laravel Echo-->
 * benefits from the API Platform JavaScript tools: [admin](../admin/index.md) and [create client](../create-client/index.md) (supports Next/React, Nuxt/Vue.js, Quasar, Vuetify and more!)
-* benefits from native HTTP cache (with automatic invalidation)
+<!-- * benefits from native HTTP cache (with automatic invalidation) -->
 * boost your app with [Octane](https://laravel.com/docs/octane) and [FrankenPHP](https://frankenphp.dev) (the default Octane engine, also created by Kévin)
 * [decouple your API from your models](../core/state-providers.md) and implement patterns such as CQRS
 * test your API using convenient ad-hoc assertions that works with Pest and PHPUnit
@@ -263,7 +263,57 @@ class Book extends Model
 
 ## Relations and Nested Ressources
 
-docs todo
+Let's replace our author column by a relation to a new `author` table:
+
+```patch
+    public function up(): void
+    {
+        Schema::create('books', function (Blueprint $table) {
+            $table->id();
+
+            $table->string('description');
+-            $table->string('author');
++            $table->integer('author_id')->unsigned();
++            $table->foreign('author_id')->references('id')->on('authors');
+
+            $table->timestamps();
+        });
+
++       Schema::create('authors', function (Blueprint $table): void {
++           $table->id();
++           $table->string('name');
++           $table->timestamps();
++       });
+    }
+```
+
+By doing so, API Platform will automatically handle links to that relation using your prefered format (JSON:API, JSON-LD etc)
+and when we request a Book we obtain:
+
+```json
+{
+    "@context": "/api/contexts/Book",
+    "@id": "/api/books/1",
+    "@type": "Book",
+    "name": "Miss Nikki Senger V",
+    "isbn": "9784291624633",
+    "publicationDate": "1971-09-04",
+    "author": "/api/authors/1"
+}
+```
+
+To create a Book related to an author, you should use IRIs to reference the relation:
+
+```http
+PATCH /api/books/1
+Content-Type: application/merge-patch+json
+
+{
+    "author": "/api/authors/2"
+}
+```
+
+There's a powerful mechanism inside API Platform to create routes using relation (e.g.: `/api/authors/2/books`), read more about [subresources here](../core/subresources.md).
 
 ## Paginating Data
 
@@ -491,6 +541,35 @@ On top of that, some validation rules are automatically added based on the given
 
 API Platform comes with several filters dedicated to Laravel, [check them out](filters.md)!
 
+
+## Authentication
+
+API Platform hooks into the native [Laravel authentication mechanism](https://laravel.com/docs/authentication).
+
+It also natively supports:
+
+* [Laravel Sanctum](https://laravel.com/docs/sanctum), an authentication system for SPAs (single page applications), mobile applications, and simple, token-based APIs
+* [Laravel Passport](https://laravel.com/docs/passport), a full OAuth 2 server
+* [Laravel Socialite](https://laravel.com/docs/socialite), OAuth providers including Facebook, X, LinkedIn, Google, GitHub, GitLab, Bitbucket, and Slack
+
+Follow the official instructions of the tool(s) you want to use.
+
+### Middlewares
+
+It's sometimes convenient to enforce the use of middleware for all API routes.
+
+In the following example, we enable the Laravel Sanctum middleware for all API routes:
+
+```php
+// config/api-platform.php
+return [
+    // ..
+    'defaults' => [
+        'middleware' => 'auth:sanctum',
+    ],
+];
+```
+
 ## Write Operations Authorization and Validation
 
 ![Form Request](images/form-request.png)
@@ -538,7 +617,8 @@ Then, add validation rules to the generated class (`app/Http/Requests/BookFormRe
 
 In this example, we only authorize admin users to do write operations, and we add some validation rules.
 
-Use this set of rules in your resource to authorize and validate user input:
+If the standard Laravel conventions are followed, the Form Request class is autodetected and used automatically.
+Otherwise, reference it explicitly in the `rules` parameter:
 
 ```patch
  // app/Models/Book.php
@@ -561,40 +641,9 @@ You can create your own `Error` resource following [this guide](https://api-plat
 
 Read the detailed documentation about [Laravel data validation in API Platform](validation.md).
 
-## Authentication
-
-API Platform hooks into the native [Laravel authentication mechanism](https://laravel.com/docs/authentication).
-
-It also natively supports:
-
-* [Laravel Sanctum](https://laravel.com/docs/sanctum), an authentication system for SPAs (single page applications), mobile applications, and simple, token-based APIs
-* [Laravel Passport](https://laravel.com/docs/passport), a full OAuth 2 server
-* [Laravel Socialite](https://laravel.com/docs/socialite), OAuth providers such as Facebook, X, LinkedIn, Google, GitHub, GitLab, Bitbucket, and Slack
-
-Follow the official instructions of the tool(s) you want to use.
-
-### Middlewares
-
-It's sometimes convenient to enforce the use of middleware for all API routes.
-
-In the following example, we enable the Laravel Sanctum middleware for all API routes:
-
-```php
-<?php
-
-// config/api-platform.php
-
-return [
-    // ..
-    'defaults' => [
-        'middleware' => 'auth:sanctum',
-    ],
-];
-```
-
 ## Authorization
 
-To protect an operation and ensure that only authorized users can access it, start by creating a Laravel [policiy](https://laravel.com/docs/authorization#creating-policies):
+To protect an operation and ensure that only authorized users can access it, start by creating a Laravel [policy](https://laravel.com/docs/authorization#creating-policies):
 
 ```console
 php artisan make:policy BookPolicy --model=Book
@@ -656,6 +705,37 @@ Read the detailed documentation about using [Laravel gates and policies with API
 <!-- ## Testing the API
 
 TODO-->
+
+## Using the JavaScript Tools
+
+### The Admin
+
+Wouldn't it be nice to have an administration backend to manage the data exposed by your API? Checkout [API Platform Admin](../admin/index.md)!
+
+![The admin](../distribution/images/api-platform-2.6-admin.png)
+
+This [Material Design](https://material.io/guidelines/) admin is a Single Page App bbuilt with [React Admin](https://marmelab.com/react-admin/). It is powerful and fully customizable.
+
+It leverages the Hydra documentation exposed by the API component to build itself. It's 100% dynamic - **no code generation
+occurs**.
+
+### SPA/PWA Scaffolding
+
+![The Next.js Progressive Web App](../distribution/images/api-platform-2.6-pwa-react.png)
+
+API Platform also has an awesome [client generator](../create-client/index.md) able to scaffold fully working [Next.js](../create-client/nextjs.md), [Nuxt.js](../create-client/nuxt.md), [React/Redux](../create-client/react.md), [Vue.js](../create-client/vuejs.md), [Quasar](../create-client/quasar.md), and [Vuetify](../create-client/vuetify.md) Progressive Web Apps/Single Page Apps that you can easily tune and customize. The generator also supports
+[React Native](../create-client/react-native.md) if you prefer to leverage all capabilities of mobile devices.
+
+
+The generated code contains a list (including pagination), a delete button, a creation and an edit form. It also includes
+[Tailwind CSS](https://tailwindcss.com) classes and [ARIA roles](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA)
+to make the app usable by people with disabilities.
+
+Checkout [the dedicated documentation](../create-client/index.md).
+
+## Hooking Your Own Business Logic
+
+Now that you learned the basics, be sure to read [the general design considerations](../core/design.md) and [how to extend API Platform](../core/extending.md) to understand how API Platform is designed, and how to hook your custom business logic!
 
 ## Using The `IsApiResourceTrait` Instead of Attributes
 
