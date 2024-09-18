@@ -649,56 +649,7 @@ To protect an operation and ensure that only authorized users can access it, sta
 php artisan make:policy BookPolicy --model=Book
 ```
 
-And... That's it. Laravel will automatically detect your new policy and use it when manipulating a Book.
-Feel free to remove any method you think is useless.
-
-If you do not want to or can't use the artisan command to generate your policy, remember to register your policy as such:
-```patch
-use App\Tests\Book\BookPolicy;
-
-Gate::guessPolicyNamesUsing(function (string $modelClass) {
-    return Book::class === $modelClass ?
-        BookPolicy::class :
-        null;
-});
-```
-
-ApiPlatform detects the operation and map's it to a specific method in your policy.
-```patch
-// EloquentResourceCollectionMetadataFactory.php
-
-private const POLICY_METHODS = [
-    Put::class => 'update',
-    Post::class => 'create',
-    Get::class => 'view',
-    GetCollection::class => 'viewAny',
-    Delete::class => 'delete',
-    Patch::class => 'update',
-];
-```
-
-If your policy methods do not match Laravel's standards, you always can use the `policy` property on an operation attribute to enforce this policy:
-```patch
-// app/Models/Book.php
-namespace App\Models;
-
- use ApiPlatform\Metadata\ApiResource;
-+use ApiPlatform\Metadata\Patch;
- use Illuminate\Database\Eloquent\Model;
-
--#[ApiResource]
- #[ApiResource(
-     paginationItemsPerPage: 10,
-+    operations: [
-+       new Patch(
-+            policy: 'updateBook',
-+       ),
-+    ],
-)]
- class Book extends Model
- {
- }
-```
+Laravel will automatically detect your new policy and use it when manipulating a Book.
 
 Read the detailed documentation about using [Laravel gates and policies with API Platform](security.md).
 
