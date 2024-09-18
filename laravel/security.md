@@ -1,5 +1,7 @@
 # Security
-## Policy
+
+## Policies
+
 API platform is compatible with Laravel [authorization](https://laravel.com/docs/authorization) mechanism. Once a gate is defined, API Platform will automatically detect your policy.
 
 ```php
@@ -13,21 +15,18 @@ class Book extends Model
 }
 ```
 
-API Platform will detect the operation and map it to a specific method in your policy.
-```php
-// EloquentResourceCollectionMetadataFactory.php
+API Platform will detect the operation and map it to a specific method in your policy according to the rules defined in this table:
 
-private const POLICY_METHODS = [
-    Put::class => 'update',
-    Post::class => 'create',
-    Get::class => 'view',
-    GetCollection::class => 'viewAny',
-    Delete::class => 'delete',
-    Patch::class => 'update',
-];
-```
+| Operation      | Policy                                                     |
+|----------------|------------------------------------------------------------|
+| GET collection | `viewAny`                                                  |
+| GET            | `view`                                                     |
+| POST           | `create`                                                   |
+| PATCH          | `update`                                                   |
+| DELETE         | `delete`                                                   |
+| PUT            | `update` or `create` if the resource doesn't already exist |
 
-If your policy methods do not match Laravel's standards, you can always use the `policy` property on an operation attribute to enforce this policy:
+If your policy methods do not match Laravel's conventions, you can always use the `policy` property on an operation attribute to enforce this policy:
 ```php
 // app/Models/Book.php
 namespace App\Models;
@@ -41,7 +40,7 @@ namespace App\Models;
      paginationItemsPerPage: 10,
 +    operations: [
 +       new Patch(
-+            policy: 'updateBook',
++            policy: 'myCustomPolicy',
 +       ),
 +    ],
 )]
@@ -51,12 +50,13 @@ namespace App\Models;
 ```
 
 You also can link a model to a policy:
+
 ```php
 use App\Models\Book;
 use App\Tests\Book\BookPolicy;
 use Illuminate\Support\Facades\Gate;
 
-Gate::guessPolicyNamesUsing(function (string $modelClass) {
+Gate::guessPolicyNamesUsing(function (string $modelClass): ?string {
     return Book::class === $modelClass ?
         BookPolicy::class :
         null;
